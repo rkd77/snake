@@ -11,10 +11,7 @@
 
 #define DEFAULT_TIMEOUT 120000000
 
-signed short poleindeks[ROZMIAR];
 unsigned char poleco[ROZMIAR];
-unsigned char tabx[ROZMIAR];
-unsigned char taby[ROZMIAR];
 unsigned char listax[ROZMIAR];
 unsigned char listay[ROZMIAR];
 unsigned char last_x, last_y, prev_x, prev_y, cur_x, cur_y, nowy_kierunek;
@@ -90,23 +87,14 @@ push_front(unsigned char x, unsigned char y)
 }
 
 void
-pop_back(signed short indeks)
+pop_back(void)
 { /* zwalnia miejsce zajmowane przez ogon */
-#if 0
-	if (indeks < 0) {
-		std::cerr << "pop_back: blad!" << std::endl;
-		przerwa = true;
-	}
-#endif
 	kon--;
 	if (kon < 0) kon = ROZMIAR - 1;
 	unsigned char x = listax[kon];
 	unsigned char y = listay[kon];
-	tabx[indeks] = x;
-	taby[indeks] = y;
 	int n = numer(y, x);
 	poleco[n] = TLO;
-	poleindeks[n] = indeks;
 	last_x = x;
 	last_y = y;
 }
@@ -114,21 +102,17 @@ pop_back(signed short indeks)
 void
 losuj(unsigned char co)
 {
-	unsigned short indeks = (unsigned short)((double)ile_wolnych * rand()/(RAND_MAX + 1.0));
-	unsigned char x = tabx[indeks];
-	unsigned char y = taby[indeks];
-//	if (pole[y][x].indeks == -1) {
-//		std::cerr << "Blad!";
-//		przerwa = true;
-//	}
-	int n = numer(y, x);
-	poleco[n] = co;
-	poleindeks[n] = -1;
+	unsigned short indeks;
+
+	do {
+		indeks = (unsigned short)((double)(ROZMIAR) * rand()/(RAND_MAX + 1.0));
+	} while (poleco[indeks] != TLO);
+
+	unsigned char x = indeks % SIZE_X;
+	unsigned char y = indeks / SIZE_X;
+
+	poleco[indeks] = co;
 	ile_wolnych--;
-	tabx[indeks] = tabx[ile_wolnych];
-	taby[indeks] = taby[ile_wolnych];
-	int a = numer(taby[indeks], tabx[indeks]);
-	poleindeks[a] = indeks;
 	last_x = x;
 	last_y = y;
 }
@@ -164,23 +148,16 @@ start(unsigned short l_jablek, unsigned short l_czach)
 	}
 	for (int x = 0; x < SIZE_X; x++) {
 		poleco[numer(0, x)] = SCIANA;
-		poleindeks[numer(0, x)] = -1;
 		poleco[numer(SIZE_Y - 1, x)] = SCIANA;
-		poleindeks[numer(SIZE_Y - 1, x)] = -1;
 	}
 	for (int y = 1; y < SIZE_Y - 1; y++) {
 		poleco[numer(y, 0)] = SCIANA;
-		poleindeks[numer(y, 0)] = -1;
 		poleco[numer(y, SIZE_X - 1)] = SCIANA;
-		poleindeks[numer(y, SIZE_X - 1)] = -1;
 	}
 	signed short i = 0;
 	for (unsigned char y = 1; y < SIZE_Y - 1; y++) {
 		for (unsigned char x = 1; x < SIZE_X - 1; x++) {
-			tabx[i] = x;
-			taby[i] = y;
 			poleco[numer(y, x)] = TLO;
-			poleindeks[numer(y, x)] = i;
 			i++;
 		}
 	}
@@ -240,7 +217,7 @@ ruch(void)
 	n = numer(y, x);
 	switch (poleco[n]) {
 	case TLO:
-		pop_back(poleindeks[n]);
+		pop_back();
 		break;
 	case JABLKO:
 		zjedzone++;
@@ -264,11 +241,10 @@ ruch(void)
 		koniec = true;
 		przerwa = true;
 		blad = true;
-		pop_back(0);
+		pop_back();
 		break;
 	}
 	poleco[n] = GLOWA_LEWO + nowy_kierunek;
-	poleindeks[n] = -1;
 	cur_x = x;
 	cur_y = y;
 	push_front(x, y);
