@@ -1,3 +1,3 @@
 snake:	snake.cpp
-	g++ -o snake snake.cpp `pkg-config --cflags --libs fox17`
+	g++ -fno-rtti -fno-exceptions -o snake snake.cpp `pkg-config --cflags --libs fox17`
 
